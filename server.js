@@ -5,6 +5,7 @@ const app = express();
 
 app.use(cors());
 app.use(express.json());
+app.use(express.urlencoded({ extended: true }));
 
 app.get("/", (req, res) => {
   res.send("Stamp AI server is working");
@@ -12,11 +13,14 @@ app.get("/", (req, res) => {
 
 app.post("/company", async (req, res) => {
   try {
-    const { inn } = req.body;
+    const inn = req.body.inn || req.body.INN;
 
+    // Tilda проверяет Webhook пустым запросом.
+    // Для такой проверки отвечаем успешно.
     if (!inn) {
-      return res.status(400).json({
-        error: "Введите ИНН"
+      return res.status(200).json({
+        ok: true,
+        message: "Webhook is working"
       });
     }
 
