@@ -90,7 +90,7 @@ app.post("/ai", async (req, res) => {
           Authorization: `Bearer ${process.env.OPENAI_API_KEY}`
         },
         body: JSON.stringify({
-          model: "gpt-6-luna",
+          model: "gpt-4o-mini",
           instructions:
             "Ты помощник сервиса Stamp AI. Отвечай на русском языке ясно, точно и по существу.",
           input: message
