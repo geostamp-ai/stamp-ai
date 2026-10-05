@@ -11,6 +11,7 @@ app.get("/", (req, res) => {
   res.send("Stamp AI server is working");
 });
 
+// Поиск компании по ИНН через DaData
 app.post("/company", async (req, res) => {
   try {
     const inn = req.body.inn || req.body.INN;
@@ -50,10 +51,79 @@ app.post("/company", async (req, res) => {
 
     res.json(data);
   } catch (error) {
-    console.error(error);
+    console.error("DaData error:", error);
 
     res.status(500).json({
       error: "Ошибка сервера"
+    });
+  }
+});
+
+// Запрос к OpenAI
+app.post("/ai", async (req, res) => {
+  try {
+    const message =
+      req.body.message ||
+      req.body.prompt ||
+      req.body.text;
+
+    // Проверка webhook пустым запросом
+    if (!message) {
+      return res.status(200).json({
+        ok: true,
+        message: "AI webhook is working"
+      });
+    }
+
+    if (!process.env.OPENAI_API_KEY) {
+      return res.status(500).json({
+        error: "OPENAI_API_KEY не настроен"
+      });
+    }
+
+    const response = await fetch(
+      "https://api.openai.com/v1/responses",
+      {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${process.env.OPENAI_API_KEY}`
+        },
+        body: JSON.stringify({
+          model: "gpt-6-luna",
+          instructions:
+            "Ты помощник сервиса Stamp AI. Отвечай на русском языке ясно, точно и по существу.",
+          input: message
+        })
+      }
+    );
+
+    const data = await response.json();
+
+    if (!response.ok) {
+      console.error("OpenAI error:", data);
+
+      return res.status(response.status).json({
+        error: "Ошибка при обращении к OpenAI",
+        details: data
+      });
+    }
+
+    const answer =
+      data.output
+        ?.flatMap(item => item.content || [])
+        ?.find(item => item.type === "output_text")
+        ?.text || "";
+
+    res.json({
+      ok: true,
+      answer: answer
+    });
+  } catch (error) {
+    console.error("AI server error:", error);
+
+    res.status(500).json({
+      error: "Ошибка сервера при обращении к ИИ"
     });
   }
 });
